@@ -17,9 +17,9 @@ const CLAVE_ADMIN = "distritodo2026";
 //  Pega aquí los dos datos de tu proyecto de Supabase.
 //  Los encuentras en: Supabase → tu proyecto → Settings → API
 //   - SUPABASE_URL: el "Project URL" (empieza por https://)
-//   - SUPABASE_KEY: la clave pública ("anon" o "publishable")
+//   - SUPABASE_KEY: "https://spyakmsebweeslfbuxlg.supabase.co"
 const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
-const SUPABASE_KEY = "TU_CLAVE_PUBLICA_AQUI";
+const SUPABASE_KEY = "sb_publishable_ydqA_DYGoobGtFGrHNUr3g_1lG_eNI7"
 // ============================================================
 
 const hayBD = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("TU-PROYECTO") && !SUPABASE_KEY.includes("TU_CLAVE");
