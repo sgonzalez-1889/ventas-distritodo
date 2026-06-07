@@ -18,7 +18,8 @@ const CLAVE_ADMIN = "distritodo2026";
 //  Los encuentras en: Supabase → tu proyecto → Settings → API
 //   - SUPABASE_URL: el "Project URL" (empieza por https://)
 //   - SUPABASE_KEY: "https://spyakmsebweeslfbuxlg.supabase.co"
-const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
+const SUPABASE_URL = "https://spyakmsebweeslfbuxlg.supabase.co"
+
 const SUPABASE_KEY = "sb_publishable_ydqA_DYGoobGtFGrHNUr3g_1lG_eNI7"
 // ============================================================
 
