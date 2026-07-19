@@ -65,6 +65,15 @@ const PUNTOS_INI = [
 
 const fmt = (n) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n || 0);
 
+// Normaliza nombres para comparar: sin tildes, minúsculas, espacios colapsados
+const normPunto = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+// ¿El asesor pertenece a este punto? Coincidencia flexible (igual o uno contiene al otro)
+const mismoPunto = (nombrePuntoAsesor, nombrePunto) => {
+  const a = normPunto(nombrePuntoAsesor), b = normPunto(nombrePunto);
+  if (!a || !b) return false;
+  return a === b || a.includes(b) || b.includes(a);
+};
+
 const hoy = new Date();
 const diaActual = hoy.getDate();
 const diasMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
@@ -497,7 +506,7 @@ export default function App() {
     const rows = XLSX.utils.sheet_to_json(ws, { defval: 0 });
     return rows.map((r, i) => {
       const get = (...keys) => { for (const k of Object.keys(r)) if (keys.includes(norm(k))) return r[k]; return 0; };
-      const pv = get("punto de venta", "puntoventa", "sucursal");
+      const pv = get("punto de venta", "puntoventa", "punto", "sucursal", "tienda", "almacen", "almacén", "punto venta");
       return {
         id: i + 1, nombre: String(get("nombre") || `Registro ${i + 1}`),
         puntoVenta: pv ? String(pv) : "",
@@ -537,16 +546,27 @@ export default function App() {
         if (b.cat) ultimaCat = b.cat; else b.cat = ultimaCat;
         return b;
       });
+      // Detectar si hay dos columnas de identificación: A=PUNTO DE VENTA, B=ASESOR
+      const encabA = norm(f0[0]), encabB = norm(f0[1]);
+      const dobleColumna = encabB === "asesor" || encabA === "punto de venta";
+      const colNombre = dobleColumna ? 1 : 0; // el asesor está en col B
+      const colPuntoDeAsesor = dobleColumna ? 0 : -1; // el punto está en col A
       const porNombre = {};
       for (let r = 2; r < matriz.length; r++) {
         const fila = matriz[r];
-        const nombre = String(fila[0] || "").trim();
+        const nombre = String(fila[colNombre] || "").trim();
         if (!nombre || norm(nombre) === "total") continue;
-        porNombre[nombre] = bloquesFinal.map((b) => ({
+        const lista = bloquesFinal.map((b) => ({
           categoria: b.cat,
           meta: +String(fila[b.colPpto] ?? "").replace(/[^0-9.-]/g, "") || 0,
           ventas: +String(fila[b.colVentas] ?? "").replace(/[^0-9.-]/g, "") || 0,
         }));
+        // Guardar el punto de venta del asesor (col A) para vincularlo después
+        if (colPuntoDeAsesor >= 0) {
+          const pv = String(fila[colPuntoDeAsesor] || "").trim();
+          if (pv) lista._puntoVenta = pv;
+        }
+        porNombre[nombre] = lista;
       }
       return porNombre;
     }
@@ -578,6 +598,8 @@ export default function App() {
       return {
         ...r,
         categorias: cats,
+        // Si la hoja de categorías trae el punto de venta (col A), lo usamos como fuente confiable
+        puntoVenta: cats._puntoVenta || r.puntoVenta,
         ventas: ventasCat,
         meta: metaCat > 0 ? metaCat : r.meta, // si no hay presupuestos por categoría aún, conserva la meta de la hoja
       };
@@ -730,7 +752,7 @@ export default function App() {
         registro={detalle}
         onCerrar={() => setDetalle(null)}
         asesoresDelPunto={detalle && puntos.some((p) => p.id === detalle.id && p.nombre === detalle.nombre)
-          ? asesores.filter((a) => (a.puntoVenta || "").trim().toLowerCase() === (detalle.nombre || "").trim().toLowerCase())
+          ? asesores.filter((a) => mismoPunto(a.puntoVenta, detalle.nombre))
           : null}
         onAbrirAsesor={(a) => setDetalle(a)} />
     </div>
