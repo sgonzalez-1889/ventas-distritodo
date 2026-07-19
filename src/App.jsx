@@ -19,8 +19,7 @@ const CLAVE_ADMIN = "distritodo2026";
 //   - SUPABASE_URL: el "Project URL" (empieza por https://)
 //   - SUPABASE_KEY: la clave pública ("anon" o "publishable")
 const SUPABASE_URL = "https://spyakmsebweeslfbuxlg.supabase.co";
-const SUPABASE_KEY = "sb_publishable_ydqA_DYGoobGtFGrHNUr3g_1lG_eNI7"
-;
+const SUPABASE_KEY = "sb_publishable_ydqA_DYGoobGtFGrHNUr3g_1lG_eNI7";
 // ============================================================
 
 const hayBD = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("TU-PROYECTO") && !SUPABASE_KEY.includes("TU_CLAVE");
@@ -46,8 +45,20 @@ const ASESORES_INI = [
   { id: 5, nombre: "Ana Torres",       puntoVenta: "Sucursal Centro", meta: 520000, ventas: 233000, cotPendientes: 7, cotMonto: 280000 },
 ];
 const PUNTOS_INI = [
-  { id: 1, nombre: "Sucursal Centro", meta: 1200000, ventas: 940000, cotPendientes: 14, cotMonto: 520000 },
-  { id: 2, nombre: "Sucursal Norte",  meta: 900000,  ventas: 870000, cotPendientes: 8,  cotMonto: 230000 },
+  { id: 1, nombre: "Sucursal Centro", meta: 1200000, ventas: 940000, cotPendientes: 14, cotMonto: 520000,
+    categorias: [
+      { categoria: "MATERIALES", ventas: 560000, meta: 700000 },
+      { categoria: "HOGAR", ventas: 210000, meta: 250000 },
+      { categoria: "MOVILIDAD ELECTRICA", ventas: 90000, meta: 120000 },
+      { categoria: "MOVILIDAD COMBUSTION", ventas: 80000, meta: 130000 },
+    ] },
+  { id: 2, nombre: "Sucursal Norte",  meta: 900000,  ventas: 870000, cotPendientes: 8,  cotMonto: 230000,
+    categorias: [
+      { categoria: "MATERIALES", ventas: 600000, meta: 550000 },
+      { categoria: "MOVILIDAD COMBUSTION", ventas: 180000, meta: 200000 },
+      { categoria: "HOGAR", ventas: 90000, meta: 100000 },
+      { categoria: "MOVILIDAD ELECTRICA", ventas: 0, meta: 50000 },
+    ] },
   { id: 3, nombre: "Sucursal Sur",    meta: 1100000, ventas: 610000, cotPendientes: 19, cotMonto: 710000 },
   { id: 4, nombre: "Tienda Plaza",    meta: 700000,  ventas: 720000, cotPendientes: 5,  cotMonto: 140000 },
 ];
@@ -259,7 +270,7 @@ function Seccion({ titulo, icono, acentoColor, items, setItems, editKey, edit, s
 }
 
 // ---- Modal de detalle por categoría padre ----
-function DetalleCategorias({ registro, onCerrar }) {
+function DetalleCategorias({ registro, onCerrar, asesoresDelPunto, onAbrirAsesor }) {
   if (!registro) return null;
   const ORDEN = ["MATERIALES", "HOGAR", "MOVILIDAD ELECTRICA", "MOVILIDAD COMBUSTION"];
   const idxOrden = (n) => { const i = ORDEN.indexOf(String(n).toUpperCase()); return i === -1 ? 99 : i; };
@@ -328,6 +339,41 @@ function DetalleCategorias({ registro, onCerrar }) {
           })}
           {!cats.length && <div className="mono" style={{ color: "#7d93b8", fontSize: 13, textAlign: "center", padding: 20 }}>Este registro no tiene categorías cargadas.</div>}
         </div>
+
+        {/* Lista de asesores del punto de venta (solo cuando el detalle es un punto) */}
+        {asesoresDelPunto && (
+          <div style={{ marginTop: 24 }}>
+            <div className="mono" style={{ fontSize: 12, color: "#00e5ff", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12, display: "flex", alignItems: "center", gap: 7 }}>
+              <Users size={14} /> Asesores de este punto ({asesoresDelPunto.length})
+            </div>
+            {asesoresDelPunto.length === 0 ? (
+              <div className="mono" style={{ color: "#7d93b8", fontSize: 13, textAlign: "center", padding: 16, background: "rgba(5,8,15,.4)", borderRadius: 12 }}>
+                No hay asesores asignados a este punto.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {asesoresDelPunto.slice().sort((a, b) => b.ventas - a.ventas).map((a) => {
+                  const ca = calcular(a);
+                  return (
+                    <div key={a.id} onClick={() => onAbrirAsesor && onAbrirAsesor(a)}
+                      style={{ background: "rgba(5,8,15,.4)", border: "1px solid rgba(90,130,220,.18)", borderRadius: 12, padding: "12px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "border-color .15s" }}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = "rgba(0,229,255,.5)"}
+                      onMouseLeave={(e) => e.currentTarget.style.borderColor = "rgba(90,130,220,.18)"}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nombre}</div>
+                        <div className="mono" style={{ fontSize: 11, color: "#7d93b8", marginTop: 2 }}>{fmt(a.ventas)} de {fmt(a.meta)}</div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: colorCierre(ca.proyCumplimiento) }}>{ca.cumplimiento.toFixed(0)}%</div>
+                        {a.categorias && a.categorias.length > 0 && <div className="mono" style={{ fontSize: 9, color: "#00e5ff" }}>ver categorías ›</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -666,13 +712,6 @@ export default function App() {
           </div>
         )}
 
-        <Seccion titulo="Asesores de ventas" icono={<Users />} acentoColor="#00e5ff"
-          items={asesores} setItems={setAsesores} editKey="asesores" mostrarPV={true} admin={admin}
-          persistir={(nuevos) => guardarEnBD(nuevos, puntos)}
-          edit={edit} setEdit={setEdit} draft={draft} setDraft={setDraft} onAbrir={setDetalle} />
-
-        <div className="glow-line" style={{ margin: "0 0 34px" }} />
-
         <Seccion titulo="Puntos de venta" icono={<Store />} acentoColor="#7c5cff"
           items={puntos} setItems={setPuntos} editKey="puntos" admin={admin}
           persistir={(nuevos) => guardarEnBD(asesores, nuevos)}
@@ -687,7 +726,13 @@ export default function App() {
         </p>
       </div>
 
-      <DetalleCategorias registro={detalle} onCerrar={() => setDetalle(null)} />
+      <DetalleCategorias
+        registro={detalle}
+        onCerrar={() => setDetalle(null)}
+        asesoresDelPunto={detalle && puntos.some((p) => p.id === detalle.id && p.nombre === detalle.nombre)
+          ? asesores.filter((a) => (a.puntoVenta || "").trim().toLowerCase() === (detalle.nombre || "").trim().toLowerCase())
+          : null}
+        onAbrirAsesor={(a) => setDetalle(a)} />
     </div>
   );
 }
