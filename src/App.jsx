@@ -67,11 +67,11 @@ const fmt = (n) => new Intl.NumberFormat("es-MX", { style: "currency", currency:
 
 // Normaliza nombres para comparar: sin tildes, minúsculas, espacios colapsados
 const normPunto = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
-// ¿El asesor pertenece a este punto? Coincidencia flexible (igual o uno contiene al otro)
+// ¿El asesor pertenece a este punto? Comparación exacta normalizada (sin tildes/espacios/mayúsculas)
 const mismoPunto = (nombrePuntoAsesor, nombrePunto) => {
   const a = normPunto(nombrePuntoAsesor), b = normPunto(nombrePunto);
   if (!a || !b) return false;
-  return a === b || a.includes(b) || b.includes(a);
+  return a === b;
 };
 
 const hoy = new Date();
